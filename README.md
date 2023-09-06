@@ -1,5 +1,7 @@
 # openapi2csv
 
+Generate a CSV from a given OpenApi.
+
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
