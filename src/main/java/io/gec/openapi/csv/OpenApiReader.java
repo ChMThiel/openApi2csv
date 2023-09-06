@@ -29,35 +29,39 @@ public class OpenApiReader {
 
     private static final OpenAPIParser PARSER = new OpenAPIParser();
 
-    static ParseOptions getParseOptions(boolean aResolveCombinators) {
+    static ParseOptions getParseOptions(boolean aResolveFully, boolean aResolveCombinators) {
         ParseOptions options = new ParseOptions();
-        options.setResolveFully(true);
+        options.setResolveFully(aResolveFully);
         options.setResolveCombinators(aResolveCombinators);
         return options;
     }
 
-    public static OpenAPI fromFile(File aFile, boolean aResolveCombinators) {
-        return fromFile(aFile, aResolveCombinators);
+    public static OpenAPI fromFile(File aFile, boolean aResolveFully, boolean aResolveCombinators) {
+        return fromFile(aFile, aResolveFully, aResolveCombinators);
     }
 
-    public static OpenAPI fromFile(File aFile, List<AuthorizationValue> auths, boolean aResolveCombinators) {
-        return fromLocation(aFile.getAbsolutePath(), auths, aResolveCombinators);
+    public static OpenAPI fromFile(File aFile, List<AuthorizationValue> auths, boolean aResolveFully, boolean aResolveCombinators) {
+        return fromLocation(aFile.getAbsolutePath(), auths, aResolveFully, aResolveCombinators);
     }
 
-    public static OpenAPI fromLocation(String aLocation, boolean aResolveCombinators) {
-        return fromLocation(aLocation, null, aResolveCombinators);
+    public static OpenAPI fromLocation(String aLocation, boolean aResolveFully, boolean aResolveCombinators) {
+        return fromLocation(aLocation, null, aResolveFully, aResolveCombinators);
     }
 
-    public static OpenAPI fromLocation(String aLocation, List<AuthorizationValue> auths, boolean aResolveCombinators) {
-        return readLocation(aLocation, auths, aResolveCombinators);
+    public static OpenAPI fromLocation(String aLocation, List<AuthorizationValue> auths, boolean aResolveFully, boolean aResolveCombinators) {
+        return readLocation(aLocation, auths, aResolveFully, aResolveCombinators);
     }
 
-    private static OpenAPI readContent(String content, List<AuthorizationValue> auths, boolean aResolveCombinators) {
-        return PARSER.readContents(content, auths, getParseOptions(aResolveCombinators)).getOpenAPI();
+    private static OpenAPI readContent(String content, List<AuthorizationValue> auths, boolean aResolveFully, boolean aResolveCombinators) {
+        return PARSER
+                .readContents(content, auths, getParseOptions(aResolveFully, aResolveCombinators))
+                .getOpenAPI();
     }
 
-    private static OpenAPI readLocation(String location, List<AuthorizationValue> auths, boolean aResolveCombinators) {
-        return PARSER.readLocation(location, auths, getParseOptions(aResolveCombinators)).getOpenAPI();
+    private static OpenAPI readLocation(String location, List<AuthorizationValue> auths, boolean aResolveFully, boolean aResolveCombinators) {
+        return PARSER
+                .readLocation(location, auths, getParseOptions(aResolveFully, aResolveCombinators))
+                .getOpenAPI();
     }
 
 }

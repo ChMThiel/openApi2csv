@@ -43,9 +43,12 @@ public class CsvWriter {
                                         for (Parameter parameter : operation.getParameters()) {
                                             row.parameter = parameter.getName();
                                             row.in = parameter.getIn();
-                                            row.type = parameter.getSchema().getType();
-                                            //TODO recursive
-                                            //TODO array
+                                            Schema schema = parameter.getSchema();
+                                            if (schema != null) {
+//                                                row.type = schema.getType();
+                                                writeSchema(csv, row, schema, parameter.getName());
+                                            }
+                                            row.ref = parameter.get$ref();
                                             row.description = parameter.getDescription();
                                             row.nullable = Optional.ofNullable(parameter.getRequired()).map(b -> !b).orElse(null);
                                             row.readOnly = null;
@@ -53,6 +56,7 @@ public class CsvWriter {
                                             csv.writeNext(row.asCsvRow());
                                         }
                                     }
+                                    row.ref = null;
                                     row.parameter = null;
                                     if (operation.getRequestBody() != null && operation.getRequestBody().getContent().get("application/json") != null) {
                                         row.in = "body";
@@ -98,9 +102,7 @@ public class CsvWriter {
             aRow.nullable = aSchema.getNullable();
             aRow.readOnly = aSchema.getReadOnly();
             aRow.example = Optional.ofNullable(aSchema.getExample()).map(String::valueOf).orElse(null);
-            //TODO Array
-            //TODO poperties
-            //TODO recursive
+            aRow.ref = aSchema.get$ref();
             aCsvWriter.writeNext(aRow.asCsvRow());
         }
     }
@@ -122,7 +124,7 @@ public class CsvWriter {
 
         public static final String[] HEADER = {
             "path", "operation", "description", "direction", "parameter", "enumeration", "in", "type",
-            "nullable", "readOnly", "example"};
+            "nullable", "readOnly", "example", "ref"};
 
         final String path;
         PathItem.HttpMethod operation;
@@ -135,6 +137,7 @@ public class CsvWriter {
         Boolean nullable;
         Boolean readOnly;
         String example;
+        String ref;
 
         enum Direction {
             INPUT, OUTPUT
@@ -156,7 +159,8 @@ public class CsvWriter {
                 type,
                 nullable != null ? nullable.toString() : null,
                 readOnly != null ? readOnly.toString() : null,
-                example};
+                example,
+                ref};
         }
 
         @Override
@@ -172,7 +176,8 @@ public class CsvWriter {
                     + "type=" + type + ", "
                     + "nullable=" + nullable + ", "
                     + "readOnly=" + readOnly + ", "
-                    + "example=" + example
+                    + "example=" + example + ", "
+                    + "ref=" + ref
                     + '}';
         }
 

@@ -21,9 +21,9 @@ class OpenApi2CSVIT {
         //when
         testee.run("src/test/resources/openapi.yaml", 
                 "--csv=mdata.csv", 
-                "--filterPath=.*partdata.*", 
-                "--filterOperation=POST", 
-                "--resolveCombinators=true");
+//                "--filterPath=.*partdata.*", 
+//                "--filterOperation=POST", 
+                "--resolveCombinators=false");
         //then
     }
 }
