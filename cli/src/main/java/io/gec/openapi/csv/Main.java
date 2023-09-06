@@ -1,12 +1,17 @@
 package io.gec.openapi.csv;
 
 import io.quarkus.runtime.QuarkusApplication;
+import io.quarkus.runtime.annotations.QuarkusMain;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
+import jakarta.inject.Inject;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -16,10 +21,17 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-/**
- * @since 04.09.2023
- */
-public class OpenApi2CSV implements QuarkusApplication {
+@QuarkusMain
+public class Main implements QuarkusApplication {
+
+    public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
+    public static final String DEFAULT_FILE_NAME = "openapi.csv";
+
+    @Inject
+    OpenApiReader openApiReader;
+    @Inject
+    CsvWriter csvWriter;
 
     @Override
     public int run(String... args) throws Exception {
@@ -32,7 +44,7 @@ public class OpenApi2CSV implements QuarkusApplication {
         options.addOption(logOption);
         Option csvFileNameOption = Option.builder().longOpt("csv")
                 .hasArg().argName("file")
-                .desc("export as csv in given file. Default " + CsvWriter.DEFAULT_FILE_NAME).build();
+                .desc("export as csv in given file. Default " + DEFAULT_FILE_NAME).build();
         options.addOption(csvFileNameOption);
         Option filterPathOption = Option.builder("p").longOpt("filterPath")
                 .hasArg().argName("regex")
@@ -61,8 +73,10 @@ public class OpenApi2CSV implements QuarkusApplication {
             String path = line.getArgList().get(0);
             Optional.ofNullable(line.getOptionValue(logOption))
                     .map(Level::parse)
-                    .ifPresent(Main.logger::setLevel);
-            String csvFileName = line.getOptionValue(csvFileNameOption);
+                    .ifPresent(LOGGER::setLevel);
+            String csvFileName = Optional
+                    .ofNullable(line.getOptionValue(csvFileNameOption))
+                    .orElse(DEFAULT_FILE_NAME);
             String filterRegex = line.getOptionValue(filterPathOption);
             Set<PathItem.HttpMethod> filterOperations = Optional
                     .ofNullable(line.getOptionValue(filterOperationOption))
@@ -77,19 +91,17 @@ public class OpenApi2CSV implements QuarkusApplication {
                     .ofNullable(line.getOptionValue(resolveCombinatorsOption))
                     .map(Boolean::valueOf)
                     .orElse(true);
-            OpenAPI openApi = OpenApiReader.fromLocation(path, resolveFully, resolveCombinators);
-            CsvWriter.write(openApi, csvFileName, new Configuration(filterRegex, filterOperations));
+            OpenAPI openApi = openApiReader.fromLocation(path, resolveFully, resolveCombinators);
+            csvWriter.write(openApi, new FileWriter(new File(csvFileName)), new Configuration(filterRegex, filterOperations));
         } catch (ParseException e) {
-            // oops, something went wrong
-            System.err.println("Parsing failed. Reason: " + e.getMessage());
+            LOGGER.severe("Parsing failed. Reason: " + e.getMessage());
             printHelp(options);
             System.exit(2);
         } catch (Exception e) {
-            System.err.println("Unexpected exception. Reason: ");
+            LOGGER.severe("Unexpected exception. Reason: ");
             e.printStackTrace();
             System.exit(2);
         }
-//        Quarkus.waitForExit();
         return 0;
     }
 
@@ -97,4 +109,5 @@ public class OpenApi2CSV implements QuarkusApplication {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp("openapi2csv <openapi>", options);
     }
+
 }

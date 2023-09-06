@@ -3,29 +3,25 @@ package io.gec.openapi.csv;
 import com.opencsv.CSVWriter;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
-import java.io.FileWriter;
+import jakarta.enterprise.context.Dependent;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * @since 04.09.2023
- */
+@Dependent
 public class CsvWriter {
 
-    public static final String DEFAULT_FILE_NAME = "openapi.csv";
     private final static Set<String> GOOD_RESPONSE_CODES = Set.of("200", "201", "204");
 
-    static void write(OpenAPI aOpenApi, String aFileName, Configuration aConfiguration) throws IOException {
-        FileWriter writer = new FileWriter(aFileName == null ? DEFAULT_FILE_NAME : aFileName);
-        try (CSVWriter csv = new CSVWriter(writer)) {
+    public void write(OpenAPI aOpenApi, Writer aWriter, Configuration aConfiguration) throws IOException {
+        try (CSVWriter csv = new CSVWriter(aWriter)) {
             csv.writeNext(Row.HEADER);
             aOpenApi.getPaths().entrySet().stream()
                     .filter(e -> aConfiguration.isMatchingPathRegex(e.getKey()))
@@ -45,7 +41,6 @@ public class CsvWriter {
                                             row.in = parameter.getIn();
                                             Schema schema = parameter.getSchema();
                                             if (schema != null) {
-//                                                row.type = schema.getType();
                                                 writeSchema(csv, row, schema, parameter.getName());
                                             }
                                             row.ref = parameter.get$ref();
@@ -79,7 +74,7 @@ public class CsvWriter {
         }
     }
 
-    static void writeSchema(CSVWriter aCsvWriter, Row aRow, Schema aSchema, String aName) {
+    void writeSchema(CSVWriter aCsvWriter, Row aRow, Schema aSchema, String aName) {
         if ("array".equalsIgnoreCase(aSchema.getType())) {
             writeSchema(aCsvWriter, aRow, aSchema.getItems(), concat(aName, aSchema.getItems().getName()));
         } else if (aSchema.getProperties() != null && !aSchema.getProperties().isEmpty()) {
@@ -107,7 +102,7 @@ public class CsvWriter {
         }
     }
 
-    static String concat(String a, String b) {
+    String concat(String a, String b) {
         if (a != null && b != null) {
             return a + "." + b;
         }
@@ -120,66 +115,4 @@ public class CsvWriter {
         return null;
     }
 
-    static class Row {
-
-        public static final String[] HEADER = {
-            "path", "operation", "description", "direction", "parameter", "enumeration", "in", "type",
-            "nullable", "readOnly", "example", "ref"};
-
-        final String path;
-        PathItem.HttpMethod operation;
-        String description;
-        Direction direction;
-        String parameter;
-        String enumeration;
-        String in;
-        String type;
-        Boolean nullable;
-        Boolean readOnly;
-        String example;
-        String ref;
-
-        enum Direction {
-            INPUT, OUTPUT
-        }
-
-        public Row(String aPath) {
-            path = aPath;
-        }
-
-        public String[] asCsvRow() {
-            return new String[]{
-                path,
-                operation.name(),
-                description,
-                direction != null ? direction.name().toLowerCase() : null,
-                parameter,
-                enumeration,
-                in,
-                type,
-                nullable != null ? nullable.toString() : null,
-                readOnly != null ? readOnly.toString() : null,
-                example,
-                ref};
-        }
-
-        @Override
-        public String toString() {
-            return "Row{"
-                    + "path=" + path + ", "
-                    + "operation=" + operation + ", "
-                    + "description=" + description + ", "
-                    + "direction=" + direction + ", "
-                    + "parameter=" + parameter + ", "
-                    + "enumeration=" + enumeration + ", "
-                    + "in=" + in + ", "
-                    + "type=" + type + ", "
-                    + "nullable=" + nullable + ", "
-                    + "readOnly=" + readOnly + ", "
-                    + "example=" + example + ", "
-                    + "ref=" + ref
-                    + '}';
-        }
-
-    }
 }
