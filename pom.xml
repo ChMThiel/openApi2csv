@@ -5,6 +5,7 @@
     <modules>
         <module>core</module>
         <module>cli</module>
+        <module>extension</module>
     </modules>
     
     <groupId>io.gec.openapi.csv</groupId>
