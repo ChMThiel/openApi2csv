@@ -5,7 +5,6 @@ import io.gec.openapi.csv.CsvWriter;
 import io.gec.openapi.csv.OpenApiReader;
 import io.smallrye.config.SmallRyeConfig;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.servers.Server;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -27,7 +26,6 @@ public class OpenApiCsvHandler implements Handler<RoutingContext> {
                 .unwrap(SmallRyeConfig.class)
                 .getConfigMapping(OpenApiCsvConfiguration.class);
         HttpServerResponse resp = aRoutingContext.response();
-        resp.headers().set("Content-Type", "text/plain;charset=UTF-8");
         String yamlUrl = aRoutingContext.request().absoluteURI().replace(".csv", ".yaml");
         OpenAPI openAPI = new OpenApiReader().fromLocation(yamlUrl, config.resolveFully(), config.resolveCombinators());
         try {
@@ -35,8 +33,11 @@ public class OpenApiCsvHandler implements Handler<RoutingContext> {
             new CsvWriter().write(openAPI, writer, new Configuration(
                     config.filterPathRegex().orElse(null),
                     config.filterOperations().orElse(null)));
+            resp.headers().set("Content-Type", "text/csv;charset=UTF-8");
             resp.end(Buffer.buffer(writer.toString()));
         } catch (IOException e) {
+            LOGGER.severe(e.getMessage());
+            resp.headers().set("Content-Type", "text/plain;charset=UTF-8");
             resp.end(Buffer.buffer("Error " + e.getMessage()));
         }
     }

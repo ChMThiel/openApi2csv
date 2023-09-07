@@ -40,7 +40,6 @@ class Openapi2csvQuarkusExtensionProcessor {
         String rootPath = getRootPath();
         aRoutes.produce(aNonApplicationRootPathBuildItem.routeBuilder()
                 .routeFunction(rootPath, corsFilter)
-                //                .routeConfigKey("quarkus.asyncapi.path")
                 .handler(handler)
                 .displayOnNotFoundPage("OpenApi2CSV not found")
                 .blockingRoute()
